@@ -13,8 +13,6 @@ Features:
 5. Better payment experience，Support calling up wallet payment, multiple payments, Binance pay, Gate pay, etc.
 6. Security protection, All important orders will be verified by KYT.
 
-Mixpay Developer Documentation：https://mixpay.me/developers/guides/introduction
-
 A secure and reliable cryptocurrency payment gateway module for WHMCS that integrates with [MixPay](https://mixpay.me), enabling your business to accept cryptocurrency payments seamlessly.
 
 ## 🚀 Features
