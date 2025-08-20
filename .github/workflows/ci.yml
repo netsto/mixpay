@@ -1,0 +1,156 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  php-lint:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        php-version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2']
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        extensions: curl, json
+        coverage: none
+    
+    - name: Check PHP syntax
+      run: find . -name "*.php" -exec php -l {} \;
+
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+        extensions: curl, json
+        tools: phpcs, phpmd
+        coverage: none
+    
+    - name: Install dependencies
+      run: |
+        composer global require "squizlabs/php_codesniffer=*"
+        composer global require "phpmd/phpmd=*"
+    
+    - name: Run PHP CodeSniffer
+      run: |
+        ~/.composer/vendor/bin/phpcs --standard=PSR12 --extensions=php modules/
+      continue-on-error: true
+    
+    - name: Run PHP Mess Detector
+      run: |
+        ~/.composer/vendor/bin/phpmd modules/ text cleancode,codesize,controversial,design,naming,unusedcode
+      continue-on-error: true
+
+  security-check:
+    name: Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+        extensions: curl, json
+        coverage: none
+    
+    - name: Check for security vulnerabilities
+      run: |
+        # Check for common security issues in PHP files
+        echo "Checking for potential security issues..."
+        
+        # Check for SQL injection patterns
+        if grep -r "mysql_query\|mysqli_query" modules/ --include="*.php"; then
+          echo "Warning: Found direct SQL queries. Consider using prepared statements."
+        fi
+        
+        # Check for XSS vulnerabilities
+        if grep -r "echo.*\$_" modules/ --include="*.php"; then
+          echo "Warning: Found potential XSS vulnerability. Ensure output is properly escaped."
+        fi
+        
+        # Check for file inclusion vulnerabilities
+        if grep -r "include.*\$\|require.*\$" modules/ --include="*.php"; then
+          echo "Warning: Found dynamic file inclusion. Ensure input is validated."
+        fi
+        
+        echo "Security check completed."
+
+  documentation:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Check documentation files
+      run: |
+        echo "Checking for required documentation files..."
+        
+        files=("README.md" "CHANGELOG.md" "CONTRIBUTING.md" "SECURITY.md" "LICENSE")
+        
+        for file in "${files[@]}"; do
+          if [ -f "$file" ]; then
+            echo "✓ $file exists"
+          else
+            echo "✗ $file is missing"
+            exit 1
+          fi
+        done
+        
+        echo "All required documentation files are present."
+    
+    - name: Validate markdown
+      uses: DavidAnson/markdownlint-action@v1
+      with:
+        files: '**/*.md'
+        config: |
+          {
+            "MD013": false,
+            "MD033": false
+          }
+
+  file-structure:
+    name: File Structure Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Check required files
+      run: |
+        echo "Checking file structure..."
+        
+        required_files=(
+          "modules/gateways/mixpay.php"
+          "modules/gateways/callback/mixpay.php"
+        )
+        
+        for file in "${required_files[@]}"; do
+          if [ -f "$file" ]; then
+            echo "✓ $file exists"
+          else
+            echo "✗ $file is missing"
+            exit 1
+          fi
+        done
+        
+        echo "File structure check passed."

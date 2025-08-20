@@ -1,0 +1,94 @@
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+error.log
+access.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+temp/
+
+# Configuration files with sensitive data
+config.php
+configuration.php
+*config*.local.php
+
+# Database files
+*.sql
+*.sqlite
+*.db
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Composer
+vendor/
+composer.lock
+composer.phar
+
+# Node.js (if using any build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Test files
+phpunit.xml
+.phpunit.result.cache
+tests/coverage/
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# WHMCS specific
+configuration.php
+attachments/
+downloads/
+templates_c/
+uploads/
+
+# Security
+*.key
+*.pem
+*.crt
+*.p12
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Development tools
+.phpcs.xml
+.phpmd.xml
+.php_cs.cache
+
+# Documentation build
+docs/_build/
+site/
