@@ -22,7 +22,7 @@ if (
     !isset($response["data"]["status"]) ||
     $response["data"]["status"] !== "success" ||
     !isset($response["data"]["payeeId"]) ||
-    $response["data"]["payeeId"] !== $resultArr["payeeId"]
+    $response["data"]["payeeId"] !== $GATEWAY["payeeId"]
 ) {
     //file_put_contents(__DIR__ . "/error_log.txt", "Payment status verification failed: " . json_encode($response) . PHP_EOL, FILE_APPEND);
     $status = ($response["data"]["failureCode"] == "40000") ? $response["data"]["status"] : "Error";
