@@ -1,171 +1,88 @@
 # Installation Guide
 
-This guide provides detailed instructions for installing the MixPay payment gateway module for WHMCS.
+## Requirements
 
-## Prerequisites
+- WHMCS 7.0 or later
+- PHP 7.2 or later
+- cURL and JSON extensions
+- HTTPS recommended for production
+- MixPay Payee ID
 
-Before installing the MixPay gateway, ensure your system meets the following requirements:
+## Install
 
-### System Requirements
-- **WHMCS**: Version 7.0 or higher
-- **PHP**: Version 7.2 or higher
-- **Extensions**: cURL, JSON
-- **SSL Certificate**: Recommended for production environments
-- **MixPay Account**: Active account with API access
+Copy the module files into the matching paths under your WHMCS root directory:
 
-### WHMCS Configuration
-- Admin access to WHMCS
-- Ability to upload files to the WHMCS directory
-- Database access (automatic table creation)
-
-## Step-by-Step Installation
-
-### 1. Download the Module
-
-Download the latest release from one of these sources:
-- [GitHub Releases](https://github.com/your-username/mixpay-whmcs/releases)
-- [Official Website](https://your-website.com/downloads)
-
-### 2. Extract Files
-
-Extract the downloaded archive to a temporary location on your computer.
-
-### 3. Upload Files
-
-Upload the files to your WHMCS installation directory:
-
-```
-WHMCS_ROOT/
-├── modules/
-│   └── gateways/
-│       ├── mixpay.php
-│       └── callback/
-│           └── mixpay.php
+```text
+modules/
+├── gateways/
+│   ├── mixpay.php
+│   └── callback/
+│       └── mixpay.php
+└── addons/
+    └── mixpay/
+        ├── mixpay.php
+        ├── mixpay.js
+        └── lang/
+            ├── chinese.php
+            └── english.php
 ```
 
-**Important**: Ensure the file permissions are set correctly:
-- Files: 644 (rw-r--r--)
-- Directories: 755 (rwxr-xr-x)
+## Activate the Gateway
 
-### 4. Activate the Gateway
+1. Sign in to the WHMCS administrator area.
+2. Open **Setup > Payments > Payment Gateways**.
+3. Activate **MixPay**.
+4. Enter the MixPay **Payee ID**.
+5. Choose the settlement asset.
+6. Configure the optional invoice prefix and exchange-rate fine tuning.
+7. Save changes.
 
-1. Log in to your WHMCS admin panel
-2. Navigate to **Setup** → **Payments** → **Payment Gateways**
-3. Find "MixPay" in the "Activate Module" dropdown
-4. Click **Activate**
+The gateway configuration can automatically activate the companion MixPay addon used for transaction administration. If needed, review addon permissions in the WHMCS administrator area.
 
-### 5. Configure the Gateway
+## Payment Flow
 
-After activation, configure the following settings:
+The module uses a hosted checkout flow:
 
-#### Required Settings
-- **Display Name**: Name shown to customers (e.g., "Cryptocurrency Payment")
-- **Payee ID**: Your MixPay payee identifier
-- **IPN Secret**: Secret key from your MixPay account
+1. WHMCS creates a MixPay one-time payment.
+2. The customer is redirected to `https://mixpay.me/code/{code}`.
+3. MixPay notifies `/modules/gateways/callback/mixpay.php` asynchronously.
+4. The callback queries MixPay for the authoritative payment result.
+5. After validation, WHMCS credits the invoice.
 
-#### Optional Settings
-- **Settlement Asset**: Preferred settlement currency
-- **IPN Debug Email**: Email for debugging notifications
-- **Sort Order**: Display order in payment options
+A browser return is useful for customer experience, but successful invoice crediting does not depend on the customer returning to WHMCS.
 
-### 6. Test the Installation
+## Testing
 
-1. Enable **IPN Debug Email** during testing
-2. Create a test invoice
-3. Process a small test payment
-4. Verify the payment is recorded correctly
-5. Check for any error messages in debug emails
+Before production use:
 
-## Configuration Details
-
-### Getting MixPay Credentials
-
-1. Log in to your [MixPay account](https://mixpay.me)
-2. Navigate to **My Account** → **Edit Settings**
-3. Copy your **Payee ID**
-4. Generate or copy your **IPN Secret**
-
-### Setting Up Webhooks
-
-The callback URL for IPN notifications will be:
-```
-https://yourdomain.com/modules/gateways/callback/mixpay.php
-```
-
-Ensure this URL is accessible from the internet and not blocked by firewalls.
-
-### Database Tables
-
-The module automatically creates the following database table:
-- `mixpay_orders`: Stores payment transaction data
+1. Create a low-value test invoice.
+2. Pay it through MixPay Checkout.
+3. Confirm the WHMCS invoice changes to Paid.
+4. Confirm the payment appears in the MixPay transaction addon.
+5. Confirm the WHMCS gateway log contains no callback verification errors.
 
 ## Troubleshooting
 
-### Common Issues
+### Gateway does not appear
 
-**Module not appearing in gateway list:**
-- Check file permissions
-- Verify files are in correct directories
-- Check WHMCS error logs
+- Confirm `modules/gateways/mixpay.php` exists.
+- Run PHP syntax checks on the module files.
+- Review WHMCS and PHP error logs.
 
-**Payments not completing:**
-- Verify Payee ID and IPN Secret
-- Check callback URL accessibility
-- Review IPN debug emails
+### Checkout does not open
 
-**Database errors:**
-- Ensure database user has CREATE TABLE permissions
-- Check for existing table conflicts
+- Confirm the Payee ID and settlement asset are configured.
+- Confirm the server can connect to `api.mixpay.me` over HTTPS.
+- Check PHP cURL support.
 
-### Debug Mode
+### Payment completed but invoice remains unpaid
 
-Enable debug mode for troubleshooting:
-1. Set **IPN Debug Email** in gateway settings
-2. Process a test transaction
-3. Check debug emails for detailed information
+- Confirm the callback URL is publicly reachable over HTTPS.
+- Review the WHMCS gateway log.
+- Confirm the payment amount, quote asset and Payee ID match the created MixPay order.
 
-### Log Files
+## Documentation
 
-Check these log files for errors:
-- WHMCS Activity Log
-- PHP Error Log
-- Web Server Error Log
-
-## Security Considerations
-
-### Production Setup
-- Use HTTPS for all communications
-- Keep IPN Secret confidential
-- Regularly update the module
-- Monitor transaction logs
-
-### Firewall Configuration
-- Allow incoming connections to callback URL
-- Restrict admin panel access
-- Use strong passwords
-
-## Support
-
-If you encounter issues during installation:
-
-1. Check the [troubleshooting section](README.md#troubleshooting)
-2. Review [common issues](https://github.com/your-username/mixpay-whmcs/issues)
-3. Create a [new issue](https://github.com/your-username/mixpay-whmcs/issues/new) with:
-   - WHMCS version
-   - PHP version
-   - Error messages
-   - Steps to reproduce
-
-## Next Steps
-
-After successful installation:
-
-1. Configure additional payment currencies
-2. Set up automated settlement
-3. Customize payment page appearance
-4. Monitor transaction reports
-5. Set up backup procedures
-
----
-
-**Note**: Always test the installation in a development environment before deploying to production.
+- MixPay Developers: https://mixpay.me/developers
+- MixPay Brand Guidelines: https://mixpay.me/brand-guidelines
+- WHMCS Payment Gateways: https://developers.whmcs.com/payment-gateways/
