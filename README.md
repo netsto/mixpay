@@ -1,161 +1,94 @@
 # MixPay Payment Gateway for WHMCS
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![WHMCS Compatible](https://img.shields.io/badge/WHMCS-Compatible-green.svg)](https://www.whmcs.com/)
+A third-party payment gateway module for WHMCS that redirects customers to MixPay Checkout and credits invoices asynchronously after MixPay confirms payment.
 
-MixPay is the official channel partner of Binance Pay, KuCoin Pay, and Gate Pay, providing businesses and developers with a unified solution to accept crypto payments from top exchanges. With a single integration, you can seamlessly enable multi-platform payments, reduce operational complexity, and offer a smooth checkout experience to users worldwide.
+## Features
 
-Features:
-1. 0 fee, No installation fees, order fees, exchange fees for merchant access.
-2. Privacy protection, Users can pay with their favorite wallet anytime and anywhere without registering and KYC on Mixpay.
-3. Auto-swap，Supports 60+ cryptocurrencies from 15+ chains, with real-time conversion.
-4. Non-custodial assets，Every payment is settled in real time and merchants maintain full control over their assets. 
-5. Better payment experience，Support calling up wallet payment, multiple payments, Binance pay, Gate pay, etc.
-6. Security protection, All important orders will be verified by KYT.
+- Hosted MixPay checkout flow
+- Automatic invoice crediting through callback notifications
+- Configurable settlement asset
+- Transaction history in the WHMCS admin area
+- English and Chinese language files
+- WHMCS gateway metadata support
 
-A secure and reliable cryptocurrency payment gateway module for WHMCS that integrates with [MixPay](https://mixpay.me), enabling your business to accept cryptocurrency payments seamlessly.
+## Requirements
 
-## 🚀 Features
+- WHMCS 7.0 or later
+- PHP 7.2 or later
+- PHP cURL and JSON extensions
+- HTTPS recommended for production
+- A MixPay account and Payee ID
 
-- **Multi-Currency Support**: Accept payments in various cryptocurrencies
-- **Automatic Settlement**: Configure automatic settlement in your preferred currency
-- **Real-time Notifications**: Instant payment confirmations via IPN (Instant Payment Notification)
-- **Secure Transactions**: Built with security best practices
-- **Easy Integration**: Simple installation and configuration process
-- **Multi-language Support**: Supports multiple languages for international users
-- **Order Tracking**: Complete transaction history and status tracking
+## Installation
 
-## 📋 Requirements
+Copy the repository contents into your WHMCS installation so these files exist:
 
-- WHMCS 7.0 or higher
-- PHP 7.2 or higher
-- cURL extension enabled
-- SSL certificate (recommended for production)
-- MixPay account with API access
-
-## 🔧 Installation
-
-### Step 1: Download and Upload Files
-
-1. Download the latest release from the [releases page](../../releases)
-2. Extract the files to your local computer
-3. Upload the contents to your WHMCS root directory
-
-You should have the following files in these locations:
-```
-WHMCS_ROOT/
-├── modules/
-│   └── gateways/
-│       ├── mixpay.php
-│       └── callback/
-│           └── mixpay.php
-|── modules/
-│   └── addons/
-│       └── mixpay/
-│           ├── mixpay.php
-│           ├── lang/
-│           │   ├── chinese.php
-│           │   └── english.php
-│           └── mixpay.js
+```text
+modules/
+├── gateways/
+│   ├── mixpay.php
+│   └── callback/
+│       └── mixpay.php
+└── addons/
+    └── mixpay/
+        ├── mixpay.php
+        ├── mixpay.js
+        └── lang/
+            ├── chinese.php
+            └── english.php
 ```
 
-### Step 2: Activate the Payment Gateway
+Then:
 
-1. Log in to your WHMCS admin panel
-2. Navigate to **Setup** → **Payments** → **Payment Gateways**
-3. In the "Activate Module" dropdown, select **MixPay**
-4. Click the **Activate** button
+1. Go to **Setup > Payments > Payment Gateways**.
+2. Activate **MixPay**.
+3. Enter your MixPay **Payee ID**.
+4. Choose a settlement asset.
+5. Save the gateway configuration.
 
-### Step 3: Configure the Gateway
+The companion MixPay addon module is used for transaction history and administration features.
 
-1. After activation, you'll see the MixPay configuration form
-2. Enter your **Payee ID** (obtained from your MixPay account)
-3. Enter your **IPN Secret** (from My Account → Edit Settings in MixPay)
-4. Optionally, enter an **IPN Debug Email** address for testing notifications
-5. Configure other settings as needed
-6. Click **Save Changes**
+## Payment Flow
 
-## ⚙️ Configuration Options
+1. A customer chooses MixPay for an unpaid WHMCS invoice.
+2. The gateway creates a MixPay one-time payment.
+3. The customer is redirected to `mixpay.me` to complete payment.
+4. MixPay sends an asynchronous callback to WHMCS.
+5. The callback re-queries MixPay and validates the payment before calling WHMCS `addInvoicePayment()`.
+6. The customer may also return to WHMCS after checkout; invoice crediting does not depend on the browser return.
 
-| Setting | Description | Required |
-|---------|-------------|----------|
-| Payee ID | Your unique MixPay payee identifier | Yes |
-| IPN Secret | Secret key for validating payment notifications | Yes |
-| IPN Debug Email | Email address to receive IPN debugging information | No |
-| Settlement Asset | Preferred currency for settlement | No |
-| Display Name | Name shown to customers during checkout | No |
+## Gateway Configuration
 
-## 🔐 Security Considerations
+Current gateway settings include:
 
-- Always use HTTPS in production environments
-- Keep your IPN Secret confidential
-- Regularly update the module to the latest version
-- Monitor IPN notifications for any suspicious activity
-- Set up proper firewall rules for your server
+- **Payee ID** — MixPay account ID that receives the payment.
+- **Settlement Asset ID** — preferred settlement cryptocurrency.
+- **Invoice Prefix** — prefix used when the WHMCS invoice number is shorter than MixPay's order ID requirement.
+- **Fine Tuning** — optional exchange-rate adjustment.
+- **Access Control** — administrator role access for the companion addon.
 
-## 📚 Documentation Links
+## Security Notes
 
-- [WHMCS Payment Gateway Documentation](https://docs.whmcs.com/payments/payment-gateways/)
-- [WHMCS Invoice Settings](https://docs.whmcs.com/system/general-settings/general-settings-invoices/#invoice-starting-)
-- [MixPay API Documentation](https://mixpay.me/developers)
+The callback does not trust the incoming notification alone. Before crediting an invoice, the module queries MixPay and validates the reported payment status, configured Payee ID, quote amount, and quote asset.
 
-## 🐛 Troubleshooting
+Use HTTPS and keep WHMCS, PHP, and this module updated.
 
-### Common Issues
+## MixPay Branding
 
-**Payment not completing:**
-- Verify your Payee ID and IPN Secret are correct
-- Check that the callback URL is accessible
-- Review IPN debug emails for error messages
+When adding MixPay branding to your WHMCS theme or checkout, use official MixPay assets and follow the MixPay Brand Guidelines:
 
-**Module not appearing:**
-- Ensure files are uploaded to the correct directories
-- Check file permissions (644 for files, 755 for directories)
-- Verify WHMCS version compatibility
+https://mixpay.me/brand-guidelines
 
-**IPN notifications not working:**
-- Confirm your server can receive external HTTP requests
-- Check firewall settings
-- Verify the callback URL is not blocked
+Do not redraw or modify the MixPay logo.
 
-### Debug Mode
+## Support
 
-Enable IPN Debug Email during initial setup to receive detailed information about payment notifications and troubleshoot any issues.
+- Issues: https://github.com/netsto/mixpay/issues
+- MixPay Developers: https://mixpay.me/developers
+- WHMCS Gateway Documentation: https://developers.whmcs.com/payment-gateways/
 
-## 🤝 Contributing
+## License
 
-We welcome contributions! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+GPL-3.0. See [LICENSE](LICENSE).
 
-### Development Setup
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-- **Issues**: Report bugs or request features via [GitHub Issues](../../issues)
-- **Documentation**: Check the [Wiki](../../wiki) for detailed guides
-- **Community**: Join discussions in [GitHub Discussions](../../discussions)
-
-## 🌟 Show Your Support
-
-If you find this plugin useful, please consider:
-- ⭐ Starring this repository
-- 🐛 Reporting bugs
-- 💡 Suggesting new features
-- 🤝 Contributing code
-
-## 📊 Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes and version history.
-
----
-
-**Note**: This module is not officially affiliated with WHMCS or MixPay. It is a community-developed integration.
+> This is an open-source WHMCS integration project. MixPay trademarks and brand assets belong to their respective owner.

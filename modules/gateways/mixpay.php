@@ -5,6 +5,25 @@
  * Below you can find current version & revision of this module
  */
 
+if (!defined("WHMCS")) {
+    die("This file cannot be accessed directly");
+}
+
+/**
+ * Define module metadata for WHMCS.
+ *
+ * @return array
+ */
+function mixpay_MetaData()
+{
+    return [
+        "DisplayName" => "MixPay",
+        "APIVersion" => "1.1",
+        "DisableLocalCreditCardInput" => true,
+        "TokenisedStorage" => false,
+    ];
+}
+
 // MixPay payment gateway configuration
 function mixpay_config()
 {
@@ -402,7 +421,10 @@ function mixpay_link($params)
         "quoteSymbol" => $quoteSymbol,
         "created_at" => date("Y-m-d H:i:s")
     ];
-    $gid = get_query_val("mixpay_orders", "id", ["InvoiceId" => $params["invoiceid"],"orderId" => $response["data"]["info"]["orderId"],"destination" => $response["data"]["info"]["destination"]]);
+    $gid = get_query_val("mixpay_orders", "id", [
+        "InvoiceId" => $params["invoiceid"],
+        "orderId" => $response["data"]["info"]["orderId"]
+    ]);
     if (!$gid) {
         $sid = insert_query("mixpay_orders", $data);
     }
@@ -413,7 +435,7 @@ function mixpay_link($params)
 function mixpay_getSettlementAssetList()
 {
     try {
-        $response = mixpay_sendRequest("/setting/settlement_assets");
+        $response = mixpay_sendRequest2("/setting/settlement_assets");
     } catch (Exception $e) {
         return $e->getMessage();
     }
@@ -428,7 +450,7 @@ function mixpay_multiSendRequest($requestData)
     foreach ($requestData as $key => $value) {
         $requests[$key] = [
             "url" => "https://api.mixpay.me/v1".$value["uri"],
-            "request" => is_array($value["request"]) ? json_encode($value["request"]) : $value["request"],
+            "request" => isset($value["request"]) ? (is_array($value["request"]) ? json_encode($value["request"]) : $value["request"]) : "",
             "method" => $value["method"]
         ];
     }
@@ -444,8 +466,8 @@ function mixpay_multiSendRequest($requestData)
         curl_setopt($conn[$k], CURLOPT_HTTPHEADER, ['content-type: application/json']);
         curl_setopt($conn[$k], CURLOPT_RETURNTRANSFER, true);
         curl_setopt($conn[$k], CURLOPT_TIMEOUT, 10);
-        curl_setopt($conn[$k], CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($conn[$k], CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($conn[$k], CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($conn[$k], CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($conn[$k], CURLOPT_USERAGENT, "Mozilla/5.0 (X11; CentOS; Linux x86_64) Gecko/20100101 Firefox/101.0");
         curl_setopt($conn[$k], CURLOPT_ENCODING, 'gzip,deflate');
         if (strtolower($item['method']) == 'post') {

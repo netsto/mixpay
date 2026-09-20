@@ -1,9 +1,13 @@
 <?php
-include "../../../init.php";
-include_once ROOTDIR . "/includes/gatewayfunctions.php";
+require_once __DIR__ . "/../../../init.php";
+require_once ROOTDIR . "/includes/gatewayfunctions.php";
+require_once ROOTDIR . "/includes/invoicefunctions.php";
 
 $gatewaymodule = "mixpay";
 $GATEWAY = getGatewayVariables("mixpay");
+if (!$GATEWAY["type"]) {
+    exit("Module Not Activated");
+}
 $resultJson = file_get_contents("php://input");
 //file_put_contents(__DIR__ . "/mixpay2" . time() . ".txt", $resultJson . PHP_EOL . "time：" . date("Y-m-d H:i:s")); // Callback parameter log
 $resultArr = json_decode($resultJson, true);
@@ -14,7 +18,12 @@ $response = sendCurlRequest($url);
 //file_put_contents(__DIR__ . "/payments_result" . time() . ".txt", $response . PHP_EOL . "time：" . date("Y-m-d H:i:s")); // Callback parameter log
 $response = json_decode($response, true);
 
-if (!isset($response["data"]["status"]) || $response["data"]["status"] !== "success") {
+if (
+    !isset($response["data"]["status"]) ||
+    $response["data"]["status"] !== "success" ||
+    !isset($response["data"]["payeeId"]) ||
+    $response["data"]["payeeId"] !== $GATEWAY["payeeId"]
+) {
     //file_put_contents(__DIR__ . "/error_log.txt", "Payment status verification failed: " . json_encode($response) . PHP_EOL, FILE_APPEND);
     $status = ($response["data"]["failureCode"] == "40000") ? $response["data"]["status"] : "Error";
     $array = [
@@ -28,7 +37,7 @@ if (!isset($response["data"]["status"]) || $response["data"]["status"] !== "succ
 
 $result = get_query_vals("mixpay_orders", "*", array("orderId" => $resultArr['orderId']));
 if ($result) {
-    $invoiceid = $result["InvoiceId"]; // System invoice ID
+    $invoiceid = checkCbInvoiceID($result["InvoiceId"], $GATEWAY["name"]); // System invoice ID
 
     // If the order has been paid or has a time record, exit
     if ($result["status"] == "Paid" || $result["time"]) {
@@ -36,8 +45,21 @@ if ($result) {
     }
 
     if ($resultArr["orderId"] == $result["orderId"]) {
+        $expectedAmount = (float)$result["ActualAmount"];
+        $reportedAmount = isset($response["data"]["quoteAmount"]) ? (float)$response["data"]["quoteAmount"] : null;
+        $expectedAssetId = $result["quoteAssetId"];
+        $reportedAssetId = isset($response["data"]["quoteAssetId"]) ? $response["data"]["quoteAssetId"] : null;
+
+        if ($reportedAmount === null || abs($reportedAmount - $expectedAmount) > 0.00000001 || $reportedAssetId !== $expectedAssetId) {
+            logTransaction($GATEWAY["name"], $response, "Amount or Asset Verification Failure");
+            exit("fail");
+        }
+
+        $transactionId = !empty($response["data"]["traceId"]) ? $response["data"]["traceId"] : $result["orderId"];
+        checkCbTransID($transactionId);
+
         // Add payment record
-        addInvoicePayment($invoiceid, $invoiceid, $result['amount'], 0, $gatewaymodule);
+        addInvoicePayment($invoiceid, $transactionId, $result["amount"], 0, $gatewaymodule);
         logTransaction($GATEWAY["name"], $_REQUEST, "Successful-A");
 
         // Update order description
@@ -74,8 +96,8 @@ function sendCurlRequest($url, $method = "GET", $request = null) {
         CURLOPT_HTTPHEADER => ["content-type: application/json"],
         CURLOPT_HEADER => 0,
         CURLOPT_RETURNTRANSFER => 1,
-        CURLOPT_SSL_VERIFYPEER => 0,
-        CURLOPT_SSL_VERIFYHOST => 0,
+        CURLOPT_SSL_VERIFYPEER => 1,
+        CURLOPT_SSL_VERIFYHOST => 2,
         CURLOPT_CUSTOMREQUEST => $method,
         CURLOPT_CONNECTTIMEOUT => 30,
         CURLOPT_TIMEOUT => 30,
