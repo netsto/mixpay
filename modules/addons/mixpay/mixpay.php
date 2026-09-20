@@ -8,7 +8,6 @@
 error_reporting(0);     //Temporarily disable error display
 ini_set("display_errors",0);
 use WHMCS\Database\Capsule;
-require_once( ROOTDIR . '/includes/dnscloudfunctions.php');
 if (!defined("WHMCS")) {
     exit("This file cannot be accessed directly");
 }
