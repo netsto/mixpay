@@ -1,0 +1,31 @@
+{
+  "schema": "1.0",
+  "type": "whmcs-gateways",
+  "name": "mixpay",
+  "license": "GPL-3.0-or-later",
+  "category": "gateway",
+  "description": {
+    "name": "MixPay",
+    "tagline": "Accept cryptocurrency payments in WHMCS through MixPay Checkout.",
+    "long": "A third-party payment gateway for WHMCS that creates MixPay checkout sessions, redirects customers to MixPay to complete payment, and processes asynchronous payment callbacks to credit WHMCS invoices.",
+    "features": [
+      "Hosted MixPay checkout flow",
+      "Automatic invoice crediting through callbacks",
+      "Configurable settlement asset",
+      "MixPay transaction history in the WHMCS admin area",
+      "English and Chinese language files"
+    ]
+  },
+  "support": {
+    "homepage": "https://github.com/netsto/mixpay",
+    "learn_more": "https://mixpay.me/",
+    "support_url": "https://github.com/netsto/mixpay/issues",
+    "docs_url": "https://github.com/netsto/mixpay#readme"
+  },
+  "authors": [
+    {
+      "name": "Netsto Open Source",
+      "homepage": "https://github.com/netsto"
+    }
+  ]
+}
